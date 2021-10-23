@@ -1,13 +1,13 @@
-import { 
-  GraphQLObjectType, 
-  GraphQLNonNull, 
-  GraphQLID, 
-  GraphQLString, 
-  GraphQLBoolean, 
-  GraphQLList, 
-  GraphQLSchema, 
-  GraphQLInt
-} from 'graphql'
+import {
+  GraphQLObjectType,
+  GraphQLNonNull,
+  GraphQLID,
+  GraphQLString,
+  GraphQLBoolean,
+  GraphQLList,
+  GraphQLSchema,
+  GraphQLInt,
+} from 'graphql';
 import { MongoClient } from 'mongodb';
 import CursorType from './graphql/Cursor';
 import { getArticles } from './models/Article';
@@ -43,6 +43,26 @@ export const PageInfo = new GraphQLObjectType({
   },
 });
 
+const ArticleEdge = new GraphQLObjectType({
+  name: 'ArticleEdge',
+  fields: () => ({
+    cursor: {
+      type: CursorType,
+      resolve(parent) {
+        return {
+          value: parent._id.toString(),
+        };
+      },
+    },
+    node: {
+      type: Article,
+      resolve(parent) {
+        return parent;
+      },
+    },
+  }),
+});
+
 const ArticleConnection = new GraphQLObjectType({
   name: 'ArticleConnection',
   fields: () => ({
@@ -58,42 +78,22 @@ const ArticleConnection = new GraphQLObjectType({
   }),
 });
 
-const ArticleEdge = new GraphQLObjectType({
-  name: 'ArticleEdge',
-  fields: () => ({
-    cursor: {
-      type: CursorType,
-      resolve(parent) {
-        return {
-          value: parent._id.toString(),
-        };
-      }
-    },
-    node: {
-      type: Article,
-      resolve(parent) {
-        return parent;
-      }
-    },
-  }),
-});
-
 export function createConnectionArguments() {
   return {
     first: {
-      type: GraphQLInt
+      type: GraphQLInt,
     },
     last: {
       type: GraphQLInt,
     },
     before: {
-      type: CursorType
+      type: CursorType,
     },
     after: {
-      type: CursorType
+      type: CursorType,
     },
 
-  }
+  };
 }
 
 const Viewer = new GraphQLObjectType({
