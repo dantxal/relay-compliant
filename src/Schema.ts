@@ -40,8 +40,8 @@ const ArticleConnection = new GraphQLObjectType({
   fields: () => ({
     edges: {
       type: new GraphQLList(ArticleEdge),
-      resolve() {
-        return [];
+      resolve(parent) {
+        return parent.query.toArray();
       },
     },
     pageInfo: {
@@ -58,6 +58,9 @@ const ArticleEdge = new GraphQLObjectType({
     },
     node: {
       type: Article,
+      resolve(parent) {
+        return parent;
+      }
     },
   }),
 });
@@ -70,8 +73,10 @@ const Viewer = new GraphQLObjectType({
     },
     allArticles: {
       type: ArticleConnection,
-      resolve() {
-        return {};
+      resolve(parent, args, { mongodb }) {
+        return {
+          query: mongodb.collection('Articles')
+        };
       },
     },
   }),
