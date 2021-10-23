@@ -9,6 +9,7 @@ import {
   GraphQLInt
 } from 'graphql'
 import { MongoClient } from 'mongodb';
+import CursorType from './graphql/Cursor';
 import { getArticles } from './models/Article';
 
 interface ApiContext {
@@ -61,7 +62,12 @@ const ArticleEdge = new GraphQLObjectType({
   name: 'ArticleEdge',
   fields: () => ({
     cursor: {
-      type: GraphQLString,
+      type: CursorType,
+      resolve(parent) {
+        return {
+          value: parent._id.toString(),
+        };
+      }
     },
     node: {
       type: Article,
@@ -79,7 +85,14 @@ export function createConnectionArguments() {
     },
     last: {
       type: GraphQLInt,
-    }
+    },
+    before: {
+      type: CursorType
+    },
+    after: {
+      type: CursorType
+    },
+
   }
 }
 
