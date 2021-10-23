@@ -3,9 +3,11 @@ import { MongoClient } from 'mongodb';
 import { graphqlHTTP } from 'express-graphql';
 import Schema from './Schema';
 
+const PORT = 3000;
+
 const app = express();
 const mongodb = MongoClient.connect(
-  'mongodb://mongoadmin:secret@localhost:27017/relay-compliant',
+  'mongodb://mongoadmin:secret@localhost:27017/',
 );
 
 app.use(
@@ -19,4 +21,4 @@ app.use(
   })),
 );
 
-app.listen(3000);
+app.listen(PORT, () => console.log(`Listening on http://localhost:${PORT}`));

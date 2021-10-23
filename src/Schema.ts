@@ -5,8 +5,15 @@ import {
   GraphQLString, 
   GraphQLBoolean, 
   GraphQLList, 
-  GraphQLSchema 
+  GraphQLSchema, 
+  GraphQLInt
 } from 'graphql'
+import { MongoClient } from 'mongodb';
+import { getArticles } from './models/Article';
+
+interface ApiContext {
+  mongodb: MongoClient
+}
 
 const Article = new GraphQLObjectType({
   name: 'Article',
@@ -65,18 +72,28 @@ const ArticleEdge = new GraphQLObjectType({
   }),
 });
 
+export function createConnectionArguments() {
+  return {
+    first: {
+      type: GraphQLInt
+    },
+    last: {
+      type: GraphQLInt,
+    }
+  }
+}
+
 const Viewer = new GraphQLObjectType({
   name: 'Viewer',
   fields: () => ({
     id: {
       type: new GraphQLNonNull(GraphQLID),
     },
-    allArticles: {
+    articles: {
       type: ArticleConnection,
-      resolve(parent, args, { mongodb }) {
-        return {
-          query: mongodb.collection('Articles')
-        };
+      args: createConnectionArguments(),
+      resolve(parent, args, { mongodb }: ApiContext) {
+        return getArticles(mongodb, args);
       },
     },
   }),
