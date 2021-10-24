@@ -1,5 +1,5 @@
 import {
-  FindCursor, MongoClient, Document, ObjectId,
+  FindCursor, MongoClient, Document, ObjectId, Collection,
 } from 'mongodb';
 
 type PaginationParameters = {
@@ -7,16 +7,28 @@ type PaginationParameters = {
 	last?: number,
 	before?: number,
 	after?: number,
+	orderField?: string
+	order?: 1 | -1
 }
 
-export async function getArticles(mongodb: MongoClient, {
-  first, last, before, after,
-}: PaginationParameters) {
-  const query = applyCursor(
-    mongodb.db('relay-compliant').collection('Articles').find(),
-    before,
-    after,
-  );
+export async function getArticles(
+  mongodb: MongoClient,
+  {
+    first, last, before, after, orderField, order,
+  }: PaginationParameters,
+
+) {
+  const collection = mongodb.db('relay-compliant').collection('Articles');
+  let query;
+
+  if (orderField === 'id') {
+    query = applyCursorAndOrderById(collection, before, after, order);
+  } else if (orderField && order) {
+    query = await applyCursorAndOrder(collection, orderField, order, before, after);
+  } else {
+    query = applyCursor(collection, before, after);
+  }
+
   const pageInfo = await applyPagination(query, first, last);
 
   return {
@@ -25,7 +37,90 @@ export async function getArticles(mongodb: MongoClient, {
   };
 }
 
-function applyCursor(query: FindCursor<Document>, before: any, after: any) {
+function applyCursorAndOrderById(
+  collection: Collection<Document>,
+  before?: any,
+  after?: any,
+  order?: 1 | -1,
+) {
+  const query = collection.find();
+  const filter: Document = {
+    _id: {},
+  };
+
+  if (before) {
+    const op = order === 1 ? '$lt' : '$gt';
+    filter._id[op] = new ObjectId(before.value);
+  }
+  if (after) {
+    const op = order === -1 ? '$lt' : '$gt';
+    filter._id[op] = new ObjectId(after.value);
+  }
+
+  return query.filter(filter);
+}
+
+async function applyCursorAndOrder(
+  collection: Collection<Document>,
+  field: string,
+  order: 1|-1,
+  before?: any,
+  after?: any,
+) {
+  let filter = {};
+  const limits: any = {};
+  const ors = [];
+
+  if (before) {
+    const op = order === 1 ? '$lt' : '$gt';
+    const beforeObject = await collection.findOne({
+      _id: new ObjectId(before.value),
+    }, {
+      fieldsAsRaw: {
+        [field]: 1,
+      },
+    });
+
+    if (beforeObject) {
+      limits[op] = beforeObject[field];
+      ors.push({
+        [field]: beforeObject[field],
+        _id: { [op]: new ObjectId(before.value) },
+      });
+    }
+  }
+  if (after) {
+    const op = order === -1 ? '$lt' : '$gt';
+    const afterObject = await collection.findOne({
+      _id: new ObjectId(after.value),
+    }, {
+      fieldsAsRaw: {
+        [field]: 1,
+      },
+    });
+    if (afterObject) {
+      limits[op] = afterObject[field];
+      ors.push({
+        [field]: afterObject[field],
+        _id: { [op]: new ObjectId(after.value) },
+      });
+    }
+  }
+  if (before || after) {
+    filter = {
+      $or: [
+        {
+          [field]: limits,
+        },
+        ...ors,
+      ],
+    };
+  }
+
+  return collection.find(filter).sort([[field, order], ['_id', order]]);
+}
+
+function applyCursor(collection: Collection<Document>, before: any, after: any) {
   const filter: Document = {
     _id: {},
   };
@@ -36,7 +131,7 @@ function applyCursor(query: FindCursor<Document>, before: any, after: any) {
     filter._id.$gt = new ObjectId(after.value);
   }
 
-  return query.filter(filter);
+  return collection.find().filter(filter);
 }
 
 async function applyPagination(query: FindCursor<Document>, first?: number, last?: number) {

@@ -92,6 +92,12 @@ export function createConnectionArguments() {
     after: {
       type: CursorType,
     },
+    order: {
+      type: GraphQLInt,
+    },
+    orderField: {
+      type: GraphQLString,
+    },
 
   };
 }
