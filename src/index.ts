@@ -1,13 +1,17 @@
+import 'dotenv/config';
 import express from 'express';
 import { MongoClient } from 'mongodb';
 import { graphqlHTTP } from 'express-graphql';
 import Schema from './Schema';
 
-const PORT = 3000;
+const { PORT, MONGO_URL }: any = process.env;
+if (!PORT || !MONGO_URL) {
+  console.error('Please make sure every environment variable is set properly.');
+}
 
 const app = express();
 const mongodb = MongoClient.connect(
-  'mongodb://mongoadmin:secret@localhost:27017/',
+  MONGO_URL,
 );
 
 app.use(

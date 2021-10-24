@@ -11,6 +11,8 @@ type PaginationParameters = {
 	order?: 1 | -1
 }
 
+const { DB_NAME } = process.env;
+
 export async function getArticles(
   mongodb: MongoClient,
   {
@@ -18,7 +20,7 @@ export async function getArticles(
   }: PaginationParameters,
 
 ) {
-  const collection = mongodb.db('relay-compliant').collection('Articles');
+  const collection = mongodb.db(DB_NAME).collection('Articles');
   let query;
 
   if (orderField === 'id' && order) {
