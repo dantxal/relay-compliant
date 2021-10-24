@@ -21,8 +21,8 @@ export async function getArticles(
   const collection = mongodb.db('relay-compliant').collection('Articles');
   let query;
 
-  if (orderField === 'id') {
-    query = applyCursorAndOrderById(collection, before, after, order);
+  if (orderField === 'id' && order) {
+    query = applyCursorAndOrderById(collection, order, before, after);
   } else if (orderField && order) {
     query = await applyCursorAndOrder(collection, orderField, order, before, after);
   } else {
@@ -39,14 +39,18 @@ export async function getArticles(
 
 function applyCursorAndOrderById(
   collection: Collection<Document>,
+  order: 1 | -1,
   before?: any,
   after?: any,
-  order?: 1 | -1,
 ) {
   const query = collection.find();
   const filter: Document = {
     _id: {},
   };
+
+  if (!before && !after) {
+    return query.sort('_id', order);
+  }
 
   if (before) {
     const op = order === 1 ? '$lt' : '$gt';
@@ -124,6 +128,10 @@ function applyCursor(collection: Collection<Document>, before: any, after: any) 
   const filter: Document = {
     _id: {},
   };
+
+  if (!before && !after) {
+    return collection.find();
+  }
   if (before) {
     filter._id.$lt = new ObjectId(before.value);
   }
