@@ -1,5 +1,5 @@
-# relay-compliant
-This is a relay-compliant API. Built with Nodejs, Express, Typescript and MongoDB. It supports ordering and pagination.
+# relay-compliant 
+This is a relay-compliant API graphql api. Built with Nodejs, Express, GraphQL, Typescript and MongoDB. It supports ordering and pagination.
 
 # usage
 1. Clone the repo:
